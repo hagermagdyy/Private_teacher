@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="org.tensorflow.lite.examples.videoclassification.auth.LoginViewModel.Navigation"/>
+
+        <variable
+            name="viewModel"
+            type="org.tensorflow.lite.examples.videoclassification.auth.LoginViewModel" />
+    </data>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        tools:context=".presentation.features.auth.login.LoginView">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:scaleType="fitXY"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="1" />
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/login_view_ic_logo"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_marginTop="40dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/login_view_welcome_back_txt"
+                app:srcCompat="@drawable/runner" />
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/login_view_login_txt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="cursive"
+                android:text="Login"
+                android:textColor="@color/AppColor"
+                android:layout_marginTop="20dp"
+                android:textSize="30sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/login_view_welcome_back_txt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Welcome Back"
+                android:textColor="@color/black"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/login_view_login_txt"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/login_view_phone_layout"
+                style="@style/Widget.Aladdin.TextInputLayout.OutlinedBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/medium_space"
+                app:layout_constraintBottom_toTopOf="@id/login_view_password_layout"
+                app:layout_constraintEnd_toEndOf="@id/login_view_guide_end"
+                app:layout_constraintStart_toStartOf="@id/login_view_guide_start"
+                app:layout_constraintTop_toBottomOf="@id/login_view_ic_logo"
+                app:startIconDrawable="@drawable/ic_phone">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/login_view_input_phone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/hint_phone_number"
+                    android:inputType="phone"
+                    android:maxLength="11"
+                    android:text="@={viewModel.phone}" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/login_view_password_layout"
+                style="@style/Widget.Aladdin.TextInputLayout.OutlinedBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/medium_space"
+                app:layout_constraintBottom_toTopOf="@id/login_view_login_btn"
+                app:layout_constraintEnd_toEndOf="@id/login_view_guide_end"
+                app:layout_constraintStart_toStartOf="@id/login_view_guide_start"
+                app:layout_constraintTop_toBottomOf="@id/login_view_phone_layout"
+                app:passwordToggleEnabled="true"
+                app:passwordToggleTint="@color/dark_grayish_blue"
+                app:startIconDrawable="@drawable/ic_lock">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/login_view_input_password"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/hint_password"
+                    android:inputType="textPassword"
+                    android:text="@={viewModel.password}" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/login_view_login_btn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/medium_space"
+                android:enabled="@{viewModel.enabledLoginBtn}"
+                android:onClick="@{()-> viewModel.login(loginViewInputPhone.getText().toString().trim(), loginViewInputPassword.getText().toString().trim(), Navigation.ChooseAvatar)}"
+                android:text="@string/login"
+                android:textColor="@color/white"
+                app:layout_constraintEnd_toEndOf="@id/login_view_guide_end"
+                app:layout_constraintStart_toStartOf="@id/login_view_guide_start"
+                app:layout_constraintTop_toBottomOf="@id/login_view_password_layout" />
+
+            <View
+                android:id="@+id/login_view_line_start_or_login"
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:background="@color/very_dark_gray_black"
+                tools:ignore="MissingConstraints" />
+
+            <View
+                android:id="@+id/login_view_line_end_or_login"
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:background="@color/very_dark_gray_black"
+                tools:ignore="MissingConstraints" />
+
+
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/login_view_guide_start"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintGuide_begin="@dimen/normal_space" />
+
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/login_view_guide_end"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintGuide_end="@dimen/normal_space" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</layout>

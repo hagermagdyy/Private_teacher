@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Spaces -->
+    <dimen name="soft_space">4dp</dimen>
+    <dimen name="small_s_space">6dp</dimen>
+    <dimen name="small_space">8dp</dimen>
+    <dimen name="small_x_space">12dp</dimen>
+    <dimen name="normal_space">16dp</dimen>
+    <dimen name="normal_x_space">20dp</dimen>
+    <dimen name="medium_space">24dp</dimen>
+    <dimen name="large_space">32dp</dimen>
+    <dimen name="large_x_space">50dp</dimen>
+
+    <dimen name="tfe_bottom_sheet_corner_radius">15dp</dimen>
+    <dimen name="tfe_bottom_sheet_top_padding">8dp</dimen>
+    <dimen name="tfe_bottom_sheet_margin">10dp</dimen>
+
+    <dimen name="dash_width">16dp</dimen>
+    <dimen name="dash_height">2dp</dimen>
+
+    <!-- Navigation -->
+    <dimen name="nav_view_width">268dp</dimen>
+    <dimen name="nav_item_horizontal_padding">16dp</dimen>
+    <dimen name="nav_item_vertical_padding">8dp</dimen>
+    <dimen name="nav_item_icon_padding">16dp</dimen>
+    <dimen name="nav_item_icon_size">24dp</dimen>
+    <!-- Intrinsic height may vary. Use a large radius to ensure a semicircle. -->
+    <dimen name="nav_item_background_corner_radius_left">0dp</dimen>
+    <dimen name="nav_item_background_corner_radius_right">100dp</dimen>
+    <dimen name="nav_item_background_inset_left">0dp</dimen>
+    <dimen name="nav_item_background_inset_right">8dp</dimen>
+
+    <!-- Text Sizes -->
+    <dimen name="headline_6">21sp</dimen>
+
+    <dimen name="elevation">6dp</dimen>
+    <dimen name="translationZ">3dp</dimen>
+
+
+    <!-- Shape Appearance -->
+    <dimen name="small_round">5dp</dimen>
+    <dimen name="medium_round">12dp</dimen>
+
+
+    <!-- Line Spacing -->
+    <item name="line_spacing_headline6" format="float" type="dimen">1.29</item>
+    <item name="line_spacing_body1" format="float" type="dimen">1.22</item>
+    <item name="line_spacing_body2" format="float" type="dimen">1.19</item>
+    <item name="line_spacing_caption" format="float" type="dimen">1.17</item>
+    <item name="line_spacing_small" format="float" type="dimen">1.15</item>
+    <item name="line_spacing_23" format="float" type="dimen">1.23</item>
+
+    <!-- Corner Family Size -->
+    <dimen name="corner_size_small">8dp</dimen>
+    <dimen name="corner_size_medium">8dp</dimen>
+    <dimen name="corner_size_large">20dp</dimen>
+    <dimen name="profile_image_w_h">90dp</dimen>
+    <dimen name="main_font">16sp</dimen>
+    <dimen name="second_font">13sp</dimen>
+
+    <dimen name="tab_spacing_half">2dp</dimen>
+    <dimen name="post_image_h">350dp</dimen>
+    <dimen name="banner_height">128dp</dimen>
+    <dimen name="post_detail_h">350dp</dimen>
+    <dimen name="decoration_iv_H">270dp</dimen>
+    <dimen name="promotion_iv_h">250dp</dimen>
+
+
+</resources>

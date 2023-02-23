@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/app_graph"
+    app:startDestination="@id/newSkillOrOldSkill">
+
+
+
+    <fragment
+        android:id="@+id/mainHomeFragment"
+        android:name="org.tensorflow.lite.examples.videoclassification.home.MainHomeFragment"
+        android:label="MainHomeFragment"
+        tools:layout="@layout/main_home_view"/>
+
+    <fragment
+        android:id="@+id/lessonsView"
+        android:name="org.tensorflow.lite.examples.videoclassification.lessons.LessonsView"
+        android:label="LessonsView"
+        tools:layout="@layout/lessons_view">
+        <action
+            android:id="@+id/lessonsViewToLessonDetailsView"
+            app:destination="@id/lessonDetailsView"/>
+    </fragment>
+
+
+    <fragment
+        android:id="@+id/lessonDetailsView"
+        android:name="org.tensorflow.lite.examples.videoclassification.lessons.LessonDetailsView"
+        android:label="LessonDetailsView"
+        tools:layout="@layout/lesson_details_view">
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/newSkillOrOldSkill"
+        android:name="org.tensorflow.lite.examples.videoclassification.lessons.NewSkillOrOldSkill"
+        android:label="NewSkillOrOldSkill" >
+        <action
+            android:id="@+id/newSkillOrOldSkillToNewSkill"
+            app:destination="@id/newSkills"/>
+        <action
+            android:id="@+id/newSkillOrOldSkillToOldSkills"
+            app:destination="@id/oldSkills"/>
+    </fragment>
+    <fragment
+        android:id="@+id/newSkills"
+        android:name="org.tensorflow.lite.examples.videoclassification.lessons.NewSkills"
+        android:label="NewSkills" />
+    <fragment
+        android:id="@+id/oldSkills"
+        android:name="org.tensorflow.lite.examples.videoclassification.lessons.OldSkills"
+        android:label="OldSkills" />
+
+
+</navigation>

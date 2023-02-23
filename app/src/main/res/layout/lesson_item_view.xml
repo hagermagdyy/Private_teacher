@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<layout>
+
+    <data>
+        <variable
+            name="item"
+            type="org.tensorflow.lite.examples.videoclassification.lessons.LessonsModel" />
+        <variable
+            name="constraint_view"
+            type="androidx.constraintlayout.widget.ConstraintLayout" />
+        <variable
+            name="selected"
+            type="Boolean" />
+        <variable
+            name="position"
+            type="Integer" />
+        <variable
+            name="clickListener"
+            type="org.tensorflow.lite.examples.videoclassification.lessons.LessonClickListener" />
+    </data>
+    <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        app:cardCornerRadius="40dp"
+        android:onClick="@{()-> clickListener.onLessonClick(item, position, selected, constraint_view)}"
+        android:layout_margin="10dp"
+        android:layout_height="90dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="30dp"
+                android:text="@{item.lessonName}"
+                android:textSize="30sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</layout>
+

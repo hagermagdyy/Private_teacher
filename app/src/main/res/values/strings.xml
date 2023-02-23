@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name" translatable="false">Private teacher</string>
+    <string name="personal_trainer">Personal trainer</string>
+    <string name="hint_phone_number">phone number</string>
+    <string name="hint_password">password</string>
+    <string name="forget_password_q">forget password</string>
+    <string name="login">login</string>
+    <string name="home">home</string>
+    <string name="profile">الصفحة الشخصية</string>
+    <string name="error">error</string>
+    <string name="try_again">try again</string>
+    <string name="cancel">cancel</string>
+    <string name="exit">exit</string>
+    <string name="exit_desc">Are you sure you want exit?</string>
+    <string name="yes">yes</string>
+    <string name="no">no</string>
+    <string name="choose_your_avatar">Choose Your Avatar</string>
+    <string name="next">Next</string>
+    <string name="videos">المسار التعليمي</string>
+    <string name="main">الأساسية</string>
+    <string name="start_capture">Starts Capture</string>
+    <string name="stop_capture">stop capture</string>
+    <string name="tfe_tv_frame">Input Size</string>
+    <string name="tfe_tv_inference_time">Inference Time</string>
+    <string name="tfe_tv_input_fps">Input FPS</string>
+    <string name="tfe_tv_threads">Threads</string>
+    <string name="inference_time">%dms</string>
+    <string name="frame_size">%d*%d</string>
+    <string name="tfe_btn_clear_model_state">Clear model state</string>
+    <string name="tfe_tv_model">Model:</string>
+    <string-array name="tfe_pe_models_array">
+        <item>MoviNet-A0</item>
+        <item>MoviNet-A1</item>
+        <item>MoviNet-A2</item>
+    </string-array>
+</resources>

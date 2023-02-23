@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/auth_graph"
+    app:startDestination="@id/loginView">
+
+    <fragment
+        android:id="@+id/loginView"
+        android:name="org.tensorflow.lite.examples.videoclassification.auth.LoginView"
+        android:label="login_view"
+        tools:layout="@layout/login_view">
+        <action
+            android:id="@+id/action_loginView_to_ChooseAvatarView"
+            app:destination="@+id/chooseAvatarView2"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/chooseAvatarView2"
+        android:name="org.tensorflow.lite.examples.videoclassification.chooseAvatar.ChooseAvatarView"
+        android:label="ChooseAvatarView"
+        tools:layout="@layout/choose_avatar_view">
+        <action
+            android:id="@+id/action_chooseAvatarView2_to_homeFragment"
+            app:destination="@id/homeFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="org.tensorflow.lite.examples.videoclassification.home.HomeFragment"
+        android:label="HomeFragment"
+        tools:layout="@layout/home_view">
+
+        <action
+            android:id="@+id/homeFragmentToAddInfoView"
+            app:destination="@id/addInfoView"/>
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/addInfoView"
+        android:name="org.tensorflow.lite.examples.videoclassification.addInfo.AddInfoView"
+        android:label="AddInfoView"
+        tools:layout="@layout/add_info_view">
+        <action
+            android:id="@+id/addInfoViewToMainHomeView"
+            app:destination="@id/mainHomeFragment"
+            />
+        <action
+            android:id="@+id/addInfoViewToNewOrOldSkills"
+            app:destination="@id/newSkillOrOldSkill"/>
+    </fragment>
+
+</navigation>

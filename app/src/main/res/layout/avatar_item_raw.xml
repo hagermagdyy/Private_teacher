@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <data>
+        <variable
+            name="position"
+            type="Integer" />
+        <variable
+            name="item"
+            type="org.tensorflow.lite.examples.videoclassification.chooseAvatar.AvatarModel" />
+        <variable
+            name="selected"
+            type="Boolean"
+            />
+        <variable
+            name="constraint_view"
+            type="androidx.constraintlayout.widget.ConstraintLayout" />
+        <variable
+            name="clickListener"
+            type="org.tensorflow.lite.examples.videoclassification.chooseAvatar.OnAvatarClickListener" />
+    </data>
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/view"
+        android:layout_width="115dp"
+        android:layout_height="115dp"
+        android:layout_margin="20dp">
+
+        <ImageView
+            android:id="@+id/woman"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            tools:background="@drawable/boy"
+            android:onClick="@{() -> clickListener.onImaeClick(position , selected, view, item )}"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
