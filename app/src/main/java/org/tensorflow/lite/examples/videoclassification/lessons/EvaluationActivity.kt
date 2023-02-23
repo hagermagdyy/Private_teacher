@@ -59,7 +59,7 @@ class EvaluationActivity : AppCompatActivity() {
     private lateinit var sheetBehavior: BottomSheetBehavior<LinearLayout>
 
     lateinit var mp: MediaPlayer
-    
+
     private var videoClassifier: VideoClassifier? = null
     private var numThread = 1
     private var modelPosition = 0
