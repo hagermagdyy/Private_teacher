@@ -1,9 +1,12 @@
 package org.tensorflow.lite.examples.videoclassification.lessons
 
 import android.Manifest
+import android.content.Context
 import android.content.DialogInterface
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.Matrix
 import android.hardware.camera2.CaptureRequest
 import android.media.MediaPlayer
@@ -28,10 +31,10 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import org.tensorflow.lite.examples.videoclassification.CalculateUtils
 import org.tensorflow.lite.examples.videoclassification.R
-import org.tensorflow.lite.examples.videoclassification.databinding.ActivityMainBinding
 import org.tensorflow.lite.examples.videoclassification.databinding.EvaluationActivityBinding
 import org.tensorflow.lite.examples.videoclassification.ml.VideoClassifier
 import org.tensorflow.lite.support.label.Category
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -43,6 +46,8 @@ class EvaluationActivity : AppCompatActivity() {
         private const val TAG = "TFLite-VidClassify"
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
         private const val MAX_RESULT = 3
+        private var recorded = false
+        private lateinit var sharedPreference: SharedPreferences
 
         //        private const val MODEL_MOVINET_A0_FILE = "movinet_a0_stream_int8.tflite"
 //        private const val MODEL_MOVINET_A1_FILE = "movinet_a1_stream_int8.tflite"
@@ -87,6 +92,11 @@ class EvaluationActivity : AppCompatActivity() {
         // Initialize the view layout.
         binding = EvaluationActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        sharedPreference =
+            this@EvaluationActivity.getSharedPreferences("Parcelable", Context.MODE_PRIVATE)
+
+        sharedPreference.edit().putBoolean("Recorded", false).apply()
 
         mp = MediaPlayer.create(this@EvaluationActivity, R.raw.before_recording)
         mp.start()
@@ -220,6 +230,7 @@ class EvaluationActivity : AppCompatActivity() {
                     Range(targetCaptureFps, targetCaptureFps)
                 )
                 val imageAnalysis = builder.build()
+
 
                 imageAnalysis.setAnalyzer(executor) { imageProxy ->
                     processImage(imageProxy)
@@ -365,14 +376,51 @@ class EvaluationActivity : AppCompatActivity() {
      */
     private fun showResults(labels: List<Category>, inferenceTime: Long, inputFps: Float) {
         runOnUiThread {
-            if(labels[0].label.equals("air drumming") || labels[0].label.equals("stretching arm") ||labels[0].label.equals("waving hand")
-                ||labels[1].label.equals("air drumming") || labels[1].label.equals("stretching arm") ||labels[1].label.equals("waving hand") ||
-                labels[2].label.equals("air drumming") || labels[2].label.equals("stretching arm") ||labels[2].label.equals("waving hand")){
-            mp = MediaPlayer.create(this@EvaluationActivity, R.raw.sport_done)
-            mp.start()
-                finishAndRemoveTask()
+
+            if (labels[0].label.equals("air drumming") || labels[0].label.equals("stretching arm")
+                || labels[1].label.equals("air drumming") || labels[1].label.equals("stretching arm") ||
+                labels[2].label.equals("air drumming") || labels[2].label.equals("stretching arm")
+            ) {
+                binding.btnTakePhoto.setBackgroundColor(Color.parseColor("#1B8D23"))
+
+                binding.btnTakePhoto.setOnClickListener {
+                    doSomethingOnce(labels)
+                }
+
+            }else {
+                binding.btnTakePhoto.setOnClickListener {
+                    mp = MediaPlayer.create(this@EvaluationActivity, R.raw.wrong_sport)
+                    mp.start()
+                    AlertDialog.Builder(this)
+                        .setTitle("خطأ!")
+                        .setMessage(
+                            "خطأ في اداء التمرين "
+                        ) // Specifying a listener allows you to take an action before dismissing the dialog.
+                        // The dialog is automatically dismissed when a dialog button is clicked.
+                        .setPositiveButton(
+                            R.string.yes,
+                            DialogInterface.OnClickListener { dialog, which ->
+                                mp.stop()
+                            }) // A null listener allows the button to dismiss the dialog and take no further action.
+                        .show()
+                }
             }
-    //         binding.bottomSheet.tvDetectedItem0.text = labels[0].label
+
+//            binding.btnTakePhoto.setOnClickListener {
+//                stopCamera(labels)
+//            }
+//
+//            if (labels[0].label.equals("air drumming") || labels[0].label.equals("stretching arm")
+//                || labels[1].label.equals("air drumming") || labels[1].label.equals("stretching arm") ||
+//                labels[2].label.equals("air drumming") || labels[2].label.equals("stretching arm")
+//            ) {
+//                binding.bottomSheet.tvDetectedItem0Value.text = "حركة صحيحة"
+//
+//            }else{
+//                binding.bottomSheet.tvDetectedItem0Value.text = "حركة خاطئة"
+//
+//            }
+            //         binding.bottomSheet.tvDetectedItem0.text = labels[0].label
 //            binding.bottomSheet.tvDetectedItem1.text = labels[1].label
 //            binding.bottomSheet.tvDetectedItem2.text = labels[2].label
 //            binding.bottomSheet.tvDetectedItem0Value.text = labels[0].score.toString()
@@ -382,6 +430,24 @@ class EvaluationActivity : AppCompatActivity() {
 //                getString(R.string.inference_time, inferenceTime)
 //            binding.bottomSheet.inputFpsInfo.text = String.format("%.1f", inputFps)
         }
+    }
+    private var cache: MutableMap<Boolean, Boolean> = ConcurrentHashMap()
+
+    private fun doSomethingOnce(labels: List<Category>) {
+        cache.computeIfAbsent(true) { x: Boolean? ->
+            mp = MediaPlayer.create(this@EvaluationActivity, R.raw.sport_done)
+            mp.start()
+            if (labels[0].score > 0.5) {
+                binding.bottomSheet.tvDetectedItem0Value.text = "10/10"
+            } else {
+                binding.bottomSheet.tvDetectedItem0Value.text = "8/10"
+            }
+            true
+        }
+    }
+
+    private fun stopCamera(labels: List<Category>) {
+
     }
 
     override fun onDestroy() {
