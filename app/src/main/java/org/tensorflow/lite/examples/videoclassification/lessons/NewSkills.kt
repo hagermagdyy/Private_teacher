@@ -55,28 +55,28 @@ class NewSkills : Fragment(), LessonClickListener {
                     textColor = "#009688"
                 ),
                 LessonsModel(
-                    lessonId = 1,
+                    lessonId = 2,
                     lessonName = "التمرين الثاني",
                     lessonUrl = "https://media.geeksforgeeks.org/wp-content/uploads/20201217192146/Screenrecorder-2020-12-17-19-17-36-828.mp4?_=1",
                     colorString = "#A5DCD6",
                     textColor = "#009688"
                 ),
                 LessonsModel(
-                    lessonId = 1,
+                    lessonId = 3,
                     lessonName = "التمرين الثالث",
                     lessonUrl = "https://media.geeksforgeeks.org/wp-content/uploads/20201217192146/Screenrecorder-2020-12-17-19-17-36-828.mp4?_=1",
                     colorString = "#A5DCD6",
                     textColor = "#009688"
                 ),
                 LessonsModel(
-                    lessonId = 1,
+                    lessonId = 4,
                     lessonName = "التمرين الرابع",
                     lessonUrl = "https://www.youtube.com/watch?v=lqH005ntlyY",
                     colorString = "#A5DCD6",
                     textColor = "#009688"
                 ),
                 LessonsModel(
-                    lessonId = 1,
+                    lessonId = 5,
                     lessonName = "التمرين الخامس",
                     lessonUrl = "https://www.youtube.com/watch?v=lqH005ntlyY",
                     colorString = "#A5DCD6",
@@ -95,6 +95,7 @@ class NewSkills : Fragment(), LessonClickListener {
     ) {
         sharedPreference.edit().putString("VideoUrl", item.lessonUrl).apply()
         sharedPreference.edit().putString("title", item.lessonName).apply()
+        sharedPreference.edit().putInt("lesson", item.lessonId).apply()
         view.setBackgroundColor(Color.parseColor("#4CAF50"))
         navigate(destination = R.id.lessonDetailsView)
     }

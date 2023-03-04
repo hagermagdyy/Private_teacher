@@ -34,7 +34,7 @@ class LessonDetailsView : Fragment() {
 
         binding.title = sharedPreference.getString("title", "")
 
-       // binding.videoView.setVideoURI(Uri.parse(sharedPreference.getString("VideoUrl", "")));
+        // binding.videoView.setVideoURI(Uri.parse(sharedPreference.getString("VideoUrl", "")));
 
         val mediaController = MediaController(requireContext())
 
@@ -42,18 +42,23 @@ class LessonDetailsView : Fragment() {
         mediaController.setMediaPlayer(binding.videoView)
 
         binding.videoView.setMediaController(mediaController)
-      //  binding.videoView.start()
+        //  binding.videoView.start()
 
-        val rawId = resources.getIdentifier("lesson1", "raw", requireContext().packageName)
-
+        val rawId = when (sharedPreference.getInt("lesson", 1)) {
+            1 -> resources.getIdentifier("running", "raw", requireContext().packageName)
+            2 -> resources.getIdentifier("chest_ball", "raw", requireContext().packageName)
+            else -> resources.getIdentifier("lesson1", "raw", requireContext().packageName)
+        }
 
         val path = "android.resource://" + requireContext().packageName.toString() + "/" + rawId
 
         binding.videoView.setVideoURI(Uri.parse(path));
 
-        binding.takeVideo.setOnClickListener {
-            val myIntent = Intent(requireContext(), EvaluationActivity::class.java)
+        binding.videoView.start()
 
+        binding.takeVideo.setOnClickListener {
+            binding.videoView.stopPlayback()
+            val myIntent = Intent(requireContext(), EvaluationActivity::class.java)
             requireContext().startActivity(myIntent)
         }
 //        binding.videoView.start()

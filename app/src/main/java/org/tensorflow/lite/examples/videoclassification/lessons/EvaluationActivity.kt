@@ -1,17 +1,17 @@
 package org.tensorflow.lite.examples.videoclassification.lessons
 
 import android.Manifest
-import android.content.Context
-import android.content.DialogInterface
-import android.content.SharedPreferences
+import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Matrix
 import android.hardware.camera2.CaptureRequest
+import android.icu.text.SimpleDateFormat
 import android.media.MediaPlayer
-import android.os.Bundle
-import android.os.SystemClock
+import android.net.Uri
+import android.os.*
+import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import android.view.View
@@ -26,25 +26,55 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.video.*
+import androidx.camera.video.VideoCapture
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import org.tensorflow.lite.examples.videoclassification.CalculateUtils
 import org.tensorflow.lite.examples.videoclassification.R
 import org.tensorflow.lite.examples.videoclassification.databinding.EvaluationActivityBinding
 import org.tensorflow.lite.examples.videoclassification.ml.VideoClassifier
 import org.tensorflow.lite.support.label.Category
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
+
 @androidx.camera.core.ExperimentalGetImage
 @androidx.camera.camera2.interop.ExperimentalCamera2Interop
 class EvaluationActivity : AppCompatActivity() {
+
+    private var videoCapture: VideoCapture<Recorder>? = null
+
+
+    private var recording: Recording? = null
+
+    private lateinit var cameraExecutor: ExecutorService
+
     companion object {
+        private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
+        private val recorder = Recorder.Builder()
+            .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+            .build()
+        private val videoCapture: VideoCapture<Recorder> = VideoCapture.withOutput(recorder)
+        private var recording: Recording? = null
+        private var videoRecordEvent: VideoRecordEvent? = null
+
         private const val REQUEST_CODE_PERMISSIONS = 10
         private const val TAG = "TFLite-VidClassify"
-        private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
+        private val REQUIRED_PERMISSIONS =
+            mutableListOf(
+                Manifest.permission.CAMERA,
+                Manifest.permission.RECORD_AUDIO
+            ).apply {
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                    add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                }
+            }.toTypedArray()
+
         private const val MAX_RESULT = 3
         private var recorded = false
         private lateinit var sharedPreference: SharedPreferences
@@ -93,10 +123,12 @@ class EvaluationActivity : AppCompatActivity() {
         binding = EvaluationActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+
         sharedPreference =
             this@EvaluationActivity.getSharedPreferences("Parcelable", Context.MODE_PRIVATE)
 
-        sharedPreference.edit().putBoolean("Recorded", false).apply()
+
+        sharedPreference.edit().putBoolean("correct_sport", false).apply()
 
         mp = MediaPlayer.create(this@EvaluationActivity, R.raw.before_recording)
         mp.start()
@@ -111,6 +143,7 @@ class EvaluationActivity : AppCompatActivity() {
                 R.string.yes,
                 DialogInterface.OnClickListener { dialog, which ->
                     mp.stop()
+                    captureVideo()
                 }) // A null listener allows the button to dismiss the dialog and take no further action.
             .show()
 
@@ -171,6 +204,104 @@ class EvaluationActivity : AppCompatActivity() {
                 this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS
             )
         }
+
+        cameraExecutor = Executors.newSingleThreadExecutor()
+
+    }
+
+    private fun captureVideo() {
+        val videoCapture = this.videoCapture ?: return
+
+
+        val curRecording = recording
+        if (curRecording != null) {
+            // Stop the current recording session.
+            curRecording.stop()
+            recording = null
+            return
+        }
+
+        // create and start a new recording session
+        val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
+            .format(System.currentTimeMillis())
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+            put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+                put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/CameraX-Video")
+            }
+        }
+
+        val mediaStoreOutputOptions = MediaStoreOutputOptions
+            .Builder(contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+            .setContentValues(contentValues)
+            .build()
+        recording = videoCapture.output
+            .prepareRecording(this, mediaStoreOutputOptions)
+            .apply {
+                if (PermissionChecker.checkSelfPermission(this@EvaluationActivity,
+                        Manifest.permission.RECORD_AUDIO) ==
+                    PermissionChecker.PERMISSION_GRANTED)
+                {
+                    withAudioEnabled()
+                }
+            }
+            .start(ContextCompat.getMainExecutor(this)) { recordEvent ->
+                when(recordEvent) {
+                    is VideoRecordEvent.Start -> {
+
+                    }
+                    is VideoRecordEvent.Finalize -> {
+                        if (!recordEvent.hasError()) {
+                            val msg = "Video capture succeeded: " +
+                                    "${recordEvent.outputResults.outputUri}"
+                            Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT)
+                                .show()
+                            Log.d(TAG, msg)
+                            sendEmail(recordEvent.outputResults.outputUri)
+
+                        } else {
+                            recording?.close()
+                            recording = null
+                            Log.e(TAG, "Video capture ends with error: " +
+                                    "${recordEvent.error}")
+                            Toast.makeText(this@EvaluationActivity, recordEvent.error.toString(), Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+    }
+
+
+    private fun sendEmail(outPutUri: Uri) {
+
+        val phone = "01025054388"
+
+
+        val sendIntent = Intent(Intent.ACTION_SEND)
+        sendIntent.type = "text/plain"
+        sendIntent.putExtra(Intent.EXTRA_STREAM, outPutUri)
+        sendIntent.putExtra(Intent.EXTRA_TEXT, sharedPreference.getString("score", ""))
+        sendIntent.putExtra("jid", "$phone@s.whatsapp.net") //phone number without "+" prefix
+
+        sendIntent.setPackage("com.whatsapp")
+        if (intent.resolveActivity(this.packageManager) == null) {
+//            Toast.makeText(this, "Error/n" + e.toString(), Toast.LENGTH_SHORT).show()
+            return
+        }
+        startActivity(sendIntent)
+
+//        val sendIntent = Intent(Intent.ACTION_SENDTO)
+//        sendIntent.action = Intent.ACTION_SENDTO
+//        sendIntent.type = "video/*"
+//        sendIntent.putExtra(Intent.EXTRA_TEXT, "Enjoy the Video")
+//        startActivity(Intent.createChooser(sendIntent, "01025054388"))
+//
+//         sendIntent.setPackage("com.whatsapp");
+//
+//        startActivity(sendIntent)
+
+
     }
 
     /**
@@ -231,7 +362,6 @@ class EvaluationActivity : AppCompatActivity() {
                 )
                 val imageAnalysis = builder.build()
 
-
                 imageAnalysis.setAnalyzer(executor) { imageProxy ->
                     processImage(imageProxy)
                 }
@@ -240,6 +370,7 @@ class EvaluationActivity : AppCompatActivity() {
                 val useCaseGroup = UseCaseGroup.Builder()
                     .addUseCase(preview)
                     .addUseCase(imageAnalysis)
+                    .addUseCase(videoCapture!!)
                     .setViewPort(binding.preview.viewPort!!)
                     .build()
 
@@ -249,10 +380,15 @@ class EvaluationActivity : AppCompatActivity() {
                 )
 
             } catch (e: Exception) {
-                // Log.e(TAG, "Use case binding failed.", e)
+                Log.e(TAG, "Use case binding failed.", e)
             }
 
         }, ContextCompat.getMainExecutor(this))
+
+        val recorder = Recorder.Builder()
+            .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+            .build()
+        videoCapture = VideoCapture.withOutput(recorder)
     }
 
     /**
@@ -324,17 +460,20 @@ class EvaluationActivity : AppCompatActivity() {
     }
 
     override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
+        requestCode: Int, permissions: Array<String>, grantResults:
+        IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
                 startCamera()
             } else {
-                Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_LONG)
-                    .show()
+                Toast.makeText(
+                    this,
+                    "Permissions not granted by the user.",
+                    Toast.LENGTH_SHORT
+                ).show()
+                finish()
             }
         }
     }
@@ -374,37 +513,112 @@ class EvaluationActivity : AppCompatActivity() {
     /**
      * Show the video classification results on the screen.
      */
+
     private fun showResults(labels: List<Category>, inferenceTime: Long, inputFps: Float) {
         runOnUiThread {
 
-            if (labels[0].label.equals("air drumming") || labels[0].label.equals("stretching arm")
-                || labels[1].label.equals("air drumming") || labels[1].label.equals("stretching arm") ||
-                labels[2].label.equals("air drumming") || labels[2].label.equals("stretching arm")
-            ) {
-                binding.btnTakePhoto.setBackgroundColor(Color.parseColor("#1B8D23"))
+            if (sharedPreference.getInt("lesson", 0) == 1) {
+                if (labels[0].label.equals("air drumming") || labels[0].label.equals("running on treadmill") || labels[0].label.equals(
+                        "jogging"
+                    )
+                    || labels[1].label.equals("air drumming") || labels[1].label.equals("running on treadmill") || labels[1].label.equals(
+                        "jogging"
+                    ) ||
+                    labels[2].label.equals("air drumming") || labels[2].label.equals("running on treadmill") || labels[2].label.equals(
+                        "jogging"
+                    ) ||
+                    labels[3].label.equals("air drumming") || labels[3].label.equals("running on treadmill") || labels[3].label.equals(
+                        "jogging"
+                    ) ||
+                    labels[4].label.equals("air drumming") || labels[4].label.equals("running on treadmill") || labels[4].label.equals(
+                        "jogging"
+                    )
+                ) {
+                    binding.btnTakePhoto.setBackgroundColor(Color.parseColor("#1B8D23"))
+                    sharedPreference.edit().putBoolean("correct_sport", true).apply()
 
-                binding.btnTakePhoto.setOnClickListener {
-                    doSomethingOnce(labels)
-                }
+                    binding.btnTakePhoto.setOnClickListener {
+                        doSomethingOnce(labels)
+                    }
 
-            }else {
-                binding.btnTakePhoto.setOnClickListener {
-                    mp = MediaPlayer.create(this@EvaluationActivity, R.raw.wrong_sport)
-                    mp.start()
-                    AlertDialog.Builder(this)
-                        .setTitle("خطأ!")
-                        .setMessage(
-                            "خطأ في اداء التمرين "
-                        ) // Specifying a listener allows you to take an action before dismissing the dialog.
-                        // The dialog is automatically dismissed when a dialog button is clicked.
-                        .setPositiveButton(
-                            R.string.yes,
-                            DialogInterface.OnClickListener { dialog, which ->
-                                mp.stop()
-                            }) // A null listener allows the button to dismiss the dialog and take no further action.
-                        .show()
+                } else {
+                    binding.btnTakePhoto.setOnClickListener {
+                        if (sharedPreference.getBoolean("correct_sport", true)) {
+                            doSomethingOnce(labels)
+                        } else {
+                            // Toast.makeText(this, labels[0].label.toString().trim(), Toast.LENGTH_SHORT).show()
+
+                            mp = MediaPlayer.create(this@EvaluationActivity, R.raw.wrong_sport)
+                            mp.start()
+                            AlertDialog.Builder(this)
+                                .setTitle("خطأ!")
+                                .setMessage(
+                                    "خطأ في اداء التمرين "
+                                ) // Specifying a listener allows you to take an action before dismissing the dialog.
+                                // The dialog is automatically dismissed when a dialog button is clicked.
+                                .setPositiveButton(
+                                    R.string.yes,
+                                    DialogInterface.OnClickListener { dialog, which ->
+                                        mp.stop()
+                                    }) // A null listener allows the button to dismiss the dialog and take no further action.
+                                .show()
+                        }
+                    }
                 }
             }
+
+            if (sharedPreference.getInt("lesson", 0) == 2) {
+                if (labels[0].label.equals("catching or throwing frisbee") || labels[0].label.equals(
+                        "playing basketball"
+                    ) || labels[0].label.equals("shooting basketball") || labels[0].label.equals("catching or throwing baseball")
+                    || labels[1].label.equals("catching or throwing frisbee") || labels[1].label.equals(
+                        "playing basketball"
+                    ) || labels[1].label.equals("shooting basketball") || labels[1].label.equals("catching or throwing baseball")
+                    || labels[2].label.equals("catching or throwing frisbee") || labels[2].label.equals(
+                        "playing basketball"
+                    ) || labels[2].label.equals("shooting basketball") || labels[2].label.equals("catching or throwing baseball")
+                    || labels[3].label.equals("catching or throwing frisbee") || labels[3].label.equals(
+                        "playing basketball"
+                    ) || labels[3].label.equals("shooting basketball") || labels[3].label.equals("catching or throwing baseball")
+                    || labels[4].label.equals("catching or throwing frisbee") || labels[4].label.equals(
+                        "playing basketball"
+                    ) || labels[4].label.equals("shooting basketball") || labels[4].label.equals("catching or throwing baseball")
+                ) {
+                    binding.btnTakePhoto.setBackgroundColor(Color.parseColor("#1B8D23"))
+                    sharedPreference.edit().putBoolean("correct_sport", true).apply()
+
+                    binding.btnTakePhoto.setOnClickListener {
+                        doSomethingOnce(labels)
+                    }
+
+                } else {
+
+                    binding.btnTakePhoto.setOnClickListener {
+
+                        if (sharedPreference.getBoolean("correct_sport", true)) {
+                            doSomethingOnce(labels)
+                        } else {
+                            // Toast.makeText(this, labels[0].label.toString().trim(), Toast.LENGTH_SHORT).show()
+
+                            mp = MediaPlayer.create(this@EvaluationActivity, R.raw.wrong_lesson1)
+                            mp.start()
+                            AlertDialog.Builder(this)
+                                .setTitle("خطأ!")
+                                .setMessage(
+                                    "خطأ في اداء التمرين "
+                                ) // Specifying a listener allows you to take an action before dismissing the dialog.
+                                // The dialog is automatically dismissed when a dialog button is clicked.
+                                .setPositiveButton(
+                                    R.string.yes,
+                                    DialogInterface.OnClickListener { dialog, which ->
+                                        mp.stop()
+                                    }) // A null listener allows the button to dismiss the dialog and take no further action.
+                                .show()
+                        }
+                    }
+                }
+            }
+
 
 //            binding.btnTakePhoto.setOnClickListener {
 //                stopCamera(labels)
@@ -431,16 +645,21 @@ class EvaluationActivity : AppCompatActivity() {
 //            binding.bottomSheet.inputFpsInfo.text = String.format("%.1f", inputFps)
         }
     }
+
     private var cache: MutableMap<Boolean, Boolean> = ConcurrentHashMap()
 
     private fun doSomethingOnce(labels: List<Category>) {
+        captureVideo()
+        // Toast.makeText(this, labels[0].label.toString().trim() + labels[1].label.toString().trim()  + labels[2].label.toString().trim()  + labels[3].label.toString().trim(), Toast.LENGTH_SHORT).show()
         cache.computeIfAbsent(true) { x: Boolean? ->
             mp = MediaPlayer.create(this@EvaluationActivity, R.raw.sport_done)
             mp.start()
-            if (labels[0].score > 0.5) {
+            if (labels[0].score > 0.5 || labels[1].score > 0.5 || labels[2].score > 0.5) {
                 binding.bottomSheet.tvDetectedItem0Value.text = "10/10"
+                sharedPreference.edit().putString("score", "10/10").apply()
             } else {
                 binding.bottomSheet.tvDetectedItem0Value.text = "8/10"
+                sharedPreference.edit().putString("score", "8/10").apply()
             }
             true
         }
