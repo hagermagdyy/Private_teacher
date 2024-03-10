@@ -1,6 +1,7 @@
 package org.tensorflow.lite.examples.videoclassification.lessons
 
 import android.Manifest
+import android.app.Dialog
 import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -10,17 +11,17 @@ import android.hardware.camera2.CaptureRequest
 import android.icu.text.SimpleDateFormat
 import android.media.MediaPlayer
 import android.net.Uri
-import android.os.*
+import android.os.Build
+import android.os.Bundle
+import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import android.view.View
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
+import android.view.Window
 import android.view.WindowManager
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.LinearLayout
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.camera2.interop.Camera2Interop
@@ -56,24 +57,21 @@ class EvaluationActivity : AppCompatActivity() {
 
     companion object {
         private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
-        private val recorder = Recorder.Builder()
-            .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
-            .build()
+        private val recorder =
+            Recorder.Builder().setQualitySelector(QualitySelector.from(Quality.HIGHEST)).build()
         private val videoCapture: VideoCapture<Recorder> = VideoCapture.withOutput(recorder)
         private var recording: Recording? = null
         private var videoRecordEvent: VideoRecordEvent? = null
 
         private const val REQUEST_CODE_PERMISSIONS = 10
         private const val TAG = "TFLite-VidClassify"
-        private val REQUIRED_PERMISSIONS =
-            mutableListOf(
-                Manifest.permission.CAMERA,
-                Manifest.permission.RECORD_AUDIO
-            ).apply {
-                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                    add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                }
-            }.toTypedArray()
+        private val REQUIRED_PERMISSIONS = mutableListOf(
+            Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO
+        ).apply {
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+        }.toTypedArray()
 
         private const val MAX_RESULT = 3
         private var recorded = false
@@ -105,10 +103,7 @@ class EvaluationActivity : AppCompatActivity() {
         }
 
         override fun onItemSelected(
-            parent: AdapterView<*>?,
-            view: View?,
-            position: Int,
-            id: Long
+            parent: AdapterView<*>?, view: View?, position: Int, id: Long
         ) {
             modelPosition = position
             createClassifier()
@@ -129,22 +124,19 @@ class EvaluationActivity : AppCompatActivity() {
 
 
         sharedPreference.edit().putBoolean("correct_sport", false).apply()
+        binding.btnTakePhoto.setBackgroundColor(Color.parseColor("#CC2323"))
+
 
         mp = MediaPlayer.create(this@EvaluationActivity, R.raw.before_recording)
         mp.start()
-        AlertDialog.Builder(this)
-            .setTitle("تنبيه!")
-            .setMessage(
-                "قبل البدء فى الاداء بنفسك\n" +
-                        "قم بتثبيت الهاتف على حامل ثلاثى أولاً وتأكد من تشغيل الكاميرا الامامية وابتعد عن الضوضاء أو أى مثير خارجى"
-            ) // Specifying a listener allows you to take an action before dismissing the dialog.
+        AlertDialog.Builder(this).setTitle("تنبيه!").setMessage(
+            "قبل البدء فى الاداء بنفسك\n" + "قم بتثبيت الهاتف على حامل ثلاثى أولاً وتأكد من تشغيل الكاميرا الامامية وابتعد عن الضوضاء أو أى مثير خارجى"
+        ) // Specifying a listener allows you to take an action before dismissing the dialog.
             // The dialog is automatically dismissed when a dialog button is clicked.
-            .setPositiveButton(
-                R.string.yes,
-                DialogInterface.OnClickListener { dialog, which ->
-                    mp.stop()
-                    captureVideo()
-                }) // A null listener allows the button to dismiss the dialog and take no further action.
+            .setPositiveButton(R.string.yes, DialogInterface.OnClickListener { dialog, which ->
+                mp.stop()
+                captureVideo()
+            }) // A null listener allows the button to dismiss the dialog and take no further action.
             .show()
 
         // Initialize the bottom sheet.
@@ -210,6 +202,8 @@ class EvaluationActivity : AppCompatActivity() {
     }
 
     private fun captureVideo() {
+        sharedPreference.edit().putBoolean("correct_sport", false).apply()
+
         val videoCapture = this.videoCapture ?: return
 
 
@@ -222,8 +216,7 @@ class EvaluationActivity : AppCompatActivity() {
         }
 
         // create and start a new recording session
-        val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
-            .format(System.currentTimeMillis())
+        val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US).format(System.currentTimeMillis())
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
@@ -243,33 +236,36 @@ class EvaluationActivity : AppCompatActivity() {
                         Manifest.permission.RECORD_AUDIO) ==
                     PermissionChecker.PERMISSION_GRANTED)
                 {
-                    withAudioEnabled()
-                }
+                withAudioEnabled()
             }
-            .start(ContextCompat.getMainExecutor(this)) { recordEvent ->
-                when(recordEvent) {
-                    is VideoRecordEvent.Start -> {
+        }.start(ContextCompat.getMainExecutor(this)) { recordEvent ->
+            when (recordEvent) {
+                is VideoRecordEvent.Start -> {
 
-                    }
-                    is VideoRecordEvent.Finalize -> {
-                        if (!recordEvent.hasError()) {
-                            val msg = "Video capture succeeded: " +
-                                    "${recordEvent.outputResults.outputUri}"
-                            Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT)
-                                .show()
-                            Log.d(TAG, msg)
+                }
+                is VideoRecordEvent.Finalize -> {
+                    if (!recordEvent.hasError()) {
+                        val msg =
+                            "Video capture succeeded: " + "${recordEvent.outputResults.outputUri}"
+                        Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
+                        Log.d(TAG, msg)
                             sendEmail(recordEvent.outputResults.outputUri)
 
-                        } else {
-                            recording?.close()
-                            recording = null
-                            Log.e(TAG, "Video capture ends with error: " +
-                                    "${recordEvent.error}")
-                            Toast.makeText(this@EvaluationActivity, recordEvent.error.toString(), Toast.LENGTH_SHORT).show()
-                        }
+                    } else {
+                        recording?.close()
+                        recording = null
+                        Log.e(
+                            TAG, "Video capture ends with error: " + "${recordEvent.error}"
+                        )
+                        Toast.makeText(
+                            this@EvaluationActivity,
+                            recordEvent.error.toString(),
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
+        }
     }
 
 
@@ -309,9 +305,7 @@ class EvaluationActivity : AppCompatActivity() {
      */
     private fun initSpinner() {
         ArrayAdapter.createFromResource(
-            this,
-            R.array.tfe_pe_models_array,
-            android.R.layout.simple_spinner_item
+            this, R.array.tfe_pe_models_array, android.R.layout.simple_spinner_item
         ).also { adapter ->
             // Specify the layout to use when the list of choices appears
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -330,18 +324,16 @@ class EvaluationActivity : AppCompatActivity() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener({
-            // Used to bind the lifecycle of cameras to the lifecycle owner
+            // Used to bind the lifecycle of cameras to the lif ecycle owner
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
 
             // Select back camera as a default
             val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
 
             // Create a Preview to show the image captured by the camera on screen.
-            val preview = Preview.Builder()
-                .build()
-                .also {
-                    it.setSurfaceProvider(binding.preview.surfaceProvider)
-                }
+            val preview = Preview.Builder().build().also {
+                it.setSurfaceProvider(binding.preview.surfaceProvider)
+            }
 
             try {
                 // Unbind use cases before rebinding.
@@ -367,12 +359,9 @@ class EvaluationActivity : AppCompatActivity() {
                 }
 
                 // Combine the ImageAnalysis and Preview into a use case group.
-                val useCaseGroup = UseCaseGroup.Builder()
-                    .addUseCase(preview)
-                    .addUseCase(imageAnalysis)
-                    .addUseCase(videoCapture!!)
-                    .setViewPort(binding.preview.viewPort!!)
-                    .build()
+                val useCaseGroup =
+                    UseCaseGroup.Builder().addUseCase(preview).addUseCase(imageAnalysis)
+                        .addUseCase(videoCapture!!).setViewPort(binding.preview.viewPort!!).build()
 
                 // Bind use cases to camera.
                 cameraProvider.bindToLifecycle(
@@ -385,9 +374,8 @@ class EvaluationActivity : AppCompatActivity() {
 
         }, ContextCompat.getMainExecutor(this))
 
-        val recorder = Recorder.Builder()
-            .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
-            .build()
+        val recorder =
+            Recorder.Builder().setQualitySelector(QualitySelector.from(Quality.HIGHEST)).build()
         videoCapture = VideoCapture.withOutput(recorder)
     }
 
@@ -411,9 +399,7 @@ class EvaluationActivity : AppCompatActivity() {
                     videoClassifier?.let { classifier ->
                         // Convert the captured frame to Bitmap.
                         val imageBitmap = Bitmap.createBitmap(
-                            it.width,
-                            it.height,
-                            Bitmap.Config.ARGB_8888
+                            it.width, it.height, Bitmap.Config.ARGB_8888
                         )
                         CalculateUtils.yuvToRgb(image, imageBitmap)
 
@@ -423,24 +409,20 @@ class EvaluationActivity : AppCompatActivity() {
                             imageProxy.imageInfo.rotationDegrees.toFloat()
                         )
                         val rotatedBitmap = Bitmap.createBitmap(
-                            imageBitmap, 0, 0, it.width, it.height,
-                            rotateMatrix, false
+                            imageBitmap, 0, 0, it.width, it.height, rotateMatrix, false
                         )
 
                         // Run inference using the TFLite model.
                         val startTimeForReference = SystemClock.uptimeMillis()
                         val results = classifier.classify(rotatedBitmap)
-                        val endTimeForReference =
-                            SystemClock.uptimeMillis() - startTimeForReference
+                        val endTimeForReference = SystemClock.uptimeMillis() - startTimeForReference
                         val inputFps = 1000f / diff
                         showResults(results, endTimeForReference, inputFps)
 
                         if (inputFps < MODEL_FPS * (1 - MODEL_FPS_ERROR_RANGE)) {
                             Log.w(
-                                TAG, "Current input FPS ($inputFps) is " +
-                                        "significantly lower than the TFLite model's " +
-                                        "expected FPS ($MODEL_FPS). It's likely because " +
-                                        "model inference takes too long on this device."
+                                TAG,
+                                "Current input FPS ($inputFps) is " + "significantly lower than the TFLite model's " + "expected FPS ($MODEL_FPS). It's likely because " + "model inference takes too long on this device."
                             )
                         }
                     }
@@ -460,8 +442,7 @@ class EvaluationActivity : AppCompatActivity() {
     }
 
     override fun onRequestPermissionsResult(
-        requestCode: Int, permissions: Array<String>, grantResults:
-        IntArray
+        requestCode: Int, permissions: Array<String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
@@ -469,9 +450,7 @@ class EvaluationActivity : AppCompatActivity() {
                 startCamera()
             } else {
                 Toast.makeText(
-                    this,
-                    "Permissions not granted by the user.",
-                    Toast.LENGTH_SHORT
+                    this, "Permissions not granted by the user.", Toast.LENGTH_SHORT
                 ).show()
                 finish()
             }
@@ -487,18 +466,12 @@ class EvaluationActivity : AppCompatActivity() {
                 videoClassifier?.close()
                 videoClassifier = null
             }
-            val options =
-                VideoClassifier.VideoClassifierOptions.builder()
-                    .setMaxResult(MAX_RESULT)
-                    .setNumThreads(numThread)
-                    .build()
+            val options = VideoClassifier.VideoClassifierOptions.builder().setMaxResult(MAX_RESULT)
+                .setNumThreads(numThread).build()
             val modelFile = MODEL_MOVINET_A2_FILE
 
             videoClassifier = VideoClassifier.createFromFileAndLabelsAndOptions(
-                this,
-                modelFile,
-                MODEL_LABEL_FILE,
-                options
+                this, modelFile, MODEL_LABEL_FILE, options
             )
 
             // show input size of video classification
@@ -517,22 +490,23 @@ class EvaluationActivity : AppCompatActivity() {
     private fun showResults(labels: List<Category>, inferenceTime: Long, inputFps: Float) {
         runOnUiThread {
 
+            binding.label1.text = labels[0].label.toString()
+            binding.label2.text = labels[1].label.toString()
+            binding.label3.text = labels[2].label.toString()
+            binding.label4.text = labels[3].label.toString()
+            binding.label5.text = labels[4].label.toString()
+
             if (sharedPreference.getInt("lesson", 0) == 1) {
-                if (labels[0].label.equals("air drumming") || labels[0].label.equals("running on treadmill") || labels[0].label.equals(
-                        "jogging"
-                    )
-                    || labels[1].label.equals("air drumming") || labels[1].label.equals("running on treadmill") || labels[1].label.equals(
-                        "jogging"
-                    ) ||
-                    labels[2].label.equals("air drumming") || labels[2].label.equals("running on treadmill") || labels[2].label.equals(
-                        "jogging"
-                    ) ||
-                    labels[3].label.equals("air drumming") || labels[3].label.equals("running on treadmill") || labels[3].label.equals(
-                        "jogging"
-                    ) ||
-                    labels[4].label.equals("air drumming") || labels[4].label.equals("running on treadmill") || labels[4].label.equals(
-                        "jogging"
-                    )
+                if (labels[0].label.equals("high kick") || labels[0].label.equals("running on treadmill") || labels[0].label.equals(
+                        "jogging")  || labels[0].label.equals("air drumming")
+                    || labels[1].label.equals("high kick") || labels[1].label.equals("running on treadmill") || labels[1].label.equals(
+                        "jogging") || labels[1].label.equals("air drumming")
+                    || labels[2].label.equals("high kick") || labels[2].label.equals("running on treadmill") || labels[2].label.equals(
+                        "jogging")|| labels[2].label.equals("air drumming")
+                    || labels[3].label.equals("high kick") || labels[3].label.equals("running on treadmill") || labels[3].label.equals(
+                        "jogging")|| labels[3].label.equals("air drumming")
+                    || labels[4].label.equals("high kick") || labels[4].label.equals("running on treadmill") || labels[4].label.equals(
+                        "jogging") || labels[4].label.equals("air drumming")
                 ) {
                     binding.btnTakePhoto.setBackgroundColor(Color.parseColor("#1B8D23"))
                     sharedPreference.edit().putBoolean("correct_sport", true).apply()
@@ -550,14 +524,11 @@ class EvaluationActivity : AppCompatActivity() {
 
                             mp = MediaPlayer.create(this@EvaluationActivity, R.raw.wrong_sport)
                             mp.start()
-                            AlertDialog.Builder(this)
-                                .setTitle("خطأ!")
-                                .setMessage(
-                                    "خطأ في اداء التمرين "
-                                ) // Specifying a listener allows you to take an action before dismissing the dialog.
+                            AlertDialog.Builder(this).setTitle("خطأ!").setMessage(
+                                "خطأ في اداء التمرين "
+                            ) // Specifying a listener allows you to take an action before dismissing the dialog.
                                 // The dialog is automatically dismissed when a dialog button is clicked.
-                                .setPositiveButton(
-                                    R.string.yes,
+                                .setPositiveButton(R.string.yes,
                                     DialogInterface.OnClickListener { dialog, which ->
                                         mp.stop()
                                     }) // A null listener allows the button to dismiss the dialog and take no further action.
@@ -568,25 +539,167 @@ class EvaluationActivity : AppCompatActivity() {
             }
 
             if (sharedPreference.getInt("lesson", 0) == 2) {
-                if (labels[0].label.equals("catching or throwing frisbee") || labels[0].label.equals(
-                        "playing basketball"
-                    ) || labels[0].label.equals("shooting basketball") || labels[0].label.equals("catching or throwing baseball")
-                    || labels[1].label.equals("catching or throwing frisbee") || labels[1].label.equals(
-                        "playing basketball"
-                    ) || labels[1].label.equals("shooting basketball") || labels[1].label.equals("catching or throwing baseball")
-                    || labels[2].label.equals("catching or throwing frisbee") || labels[2].label.equals(
-                        "playing basketball"
-                    ) || labels[2].label.equals("shooting basketball") || labels[2].label.equals("catching or throwing baseball")
-                    || labels[3].label.equals("catching or throwing frisbee") || labels[3].label.equals(
-                        "playing basketball"
-                    ) || labels[3].label.equals("shooting basketball") || labels[3].label.equals("catching or throwing baseball")
-                    || labels[4].label.equals("catching or throwing frisbee") || labels[4].label.equals(
-                        "playing basketball"
-                    ) || labels[4].label.equals("shooting basketball") || labels[4].label.equals("catching or throwing baseball")
+
+                if ((labels[0].label.equals("passing american football (not in game)")
+//
+                            || labels[1].label.equals("passing american football (not in game)")
+//
+                            || labels[2].label.equals("passing american football (not in game)")
+
+                            || labels[3].label.equals("passing american football (not in game)")
+//
+                            || labels[4].label.equals("passing american football (not in game)"))
+
+//                    &&
+//
+//                    (labels[0].label.equals("throwing ball (not baseball or American football)")
+//                            || labels[1].label.equals("throwing ball (not baseball or American football)")
+//
+//                            || labels[2].label.equals("throwing ball (not baseball or American football)")
+//
+//                            || labels[3].label.equals("throwing ball (not baseball or American football)")
+////
+//                            || labels[4].label.equals("throwing ball (not baseball or American football)"))
+
+//                    && (labels[0].label.toString() != "playing basketball"
+//                            || labels[1].label.toString() != "playing basketball"
+//                            || labels[2].label.toString() != "playing basketball"
+//                            || labels[3].label.toString() != "playing basketball"
+//                            || labels[4].label.toString() != "playing basketball"
+//                            )
+
+                    && (labels[0].label.toString() != "catching or throwing baseball" || labels[1].label.toString() != "catching or throwing baseball" || labels[2].label.toString() != "catching or throwing baseball" || labels[3].label.toString() != "catching or throwing baseball" || labels[4].label.toString() != "catching or throwing baseball")
+
+                    && (labels[0].label.toString() != "shooting basketball" || labels[1].label.toString() != "shooting basketball" || labels[2].label.toString() != "shooting basketball" || labels[3].label.toString() != "shooting basketball" || labels[4].label.toString() != "shooting basketball")
+
+                    && (labels[0].label.toString() != "exercising with an exercise ball" || labels[1].label.toString() != "exercising with an exercise ball" || labels[2].label.toString() != "exercising with an exercise ball" || labels[3].label.toString() != "exercising with an exercise ball" || labels[4].label.toString() != "exercising with an exercise ball")
+//                    &&
+//
+//                    (labels[0].label.toString() != "dribbling basketball"
+//                            || labels[1].label.toString() != "dribbling basketball"
+//                            || labels[2].label.toString() != "dribbling basketball"
+//                            )
+//
+//                    &&
+//
+//                    (labels[0].label.toString() != "playing basketball"
+//                            || labels[1].label.toString() != "playing basketball"
+//                            || labels[2].label.toString() != "playing basketball"
+//                            )
+
+//
+//                    || labels[3].label.equals("shooting basketball")
+//
+//                    || labels[4].label.equals("shooting basketball")
+//
+//                    || labels[5].label.equals("shooting basketball")
+
                 ) {
+
+//                    if (labels[0].label.toString() != "dribbling basketball"
+//
+//                        || labels[1].label.toString() != "dribbling basketball"
+//
+//                        || labels[2].label.toString() != "dribbling basketball"
+//
+//                        || labels[3].label.toString() != "dribbling basketball"
+//
+//                        || labels[4].label.toString() != "dribbling basketball"
+//
+//                        || labels[5].label.toString() != "dribbling basketball"
+//
+//                        || labels[0].label.toString() != "playing basketball"
+//
+//                        || labels[1].label.toString() != "playing basketball"
+//
+//                        || labels[2].label.toString() != "playing basketball"
+//
+//                        || labels[3].label.toString() != "playing basketball"
+//
+//                        || labels[4].label.toString() != "playing basketball"
+//
+//                        || labels[5].label.toString() != "playing basketball"
+//
+//                    )
+//
+//                    {
                     binding.btnTakePhoto.setBackgroundColor(Color.parseColor("#1B8D23"))
                     sharedPreference.edit().putBoolean("correct_sport", true).apply()
+                    binding.btnTakePhoto.setOnClickListener {
+                        doSomethingOnce(labels)
+                    }
 
+//                    }
+
+                } else {
+
+                    binding.btnTakePhoto.setOnClickListener {
+
+                        if (sharedPreference.getBoolean("correct_sport", true)) {
+                            doSomethingOnce(labels)
+                        } else {
+                            // Toast.makeText(this, labels[0].label.toString().trim(), Toast.LENGTH_SHORT).show()
+
+                            mp = MediaPlayer.create(this@EvaluationActivity, R.raw.wrong_lesson1)
+                            mp.start()
+                            AlertDialog.Builder(this).setTitle("خطأ!").setMessage(
+                                "خطأ في اداء التمرين "
+                            ) // Specifying a listener allows you to take an action before dismissing the dialog.
+                                // The dialog is automatically dismissed when a dialog button is clicked.
+                                .setPositiveButton(R.string.yes,
+                                    DialogInterface.OnClickListener { dialog, which ->
+                                        mp.stop()
+                                    }) // A null listener allows the button to dismiss the dialog and take no further action.
+                                .show()
+                        }
+                    }
+                }
+            }
+
+            if (sharedPreference.getInt("lesson", 0) == 3) {
+
+
+                if ((labels[0].label.equals("bending back")
+
+                            || labels[1].label.equals("bending back")
+
+                            || labels[2].label.equals("bending back")
+
+                            || labels[3].label.equals("bending back")
+
+                            || labels[4].label.equals("bending back")
+
+                            || labels[5].label.equals("bending back")
+                            )
+                    && (labels[0].label.equals("stretching leg")
+
+                            || labels[1].label.equals("stretching leg")
+
+                            || labels[2].label.equals("stretching leg")
+
+                            || labels[3].label.equals("stretching leg")
+
+                            || labels[4].label.equals("stretching leg")
+
+                            || labels[5].label.equals("stretching leg")
+                            )
+
+                    && (labels[0].label.equals("cracking back")
+
+                            || labels[1].label.equals("cracking back")
+
+                            || labels[2].label.equals("cracking back")
+
+                            || labels[3].label.equals("cracking back")
+
+                            || labels[4].label.equals("cracking back")
+
+                            || labels[5].label.equals("cracking back")
+                            )
+                ) {
+
+                    binding.btnTakePhoto.setBackgroundColor(Color.parseColor("#1B8D23"))
+                    sharedPreference.edit().putBoolean("correct_sport", true).apply()
                     binding.btnTakePhoto.setOnClickListener {
                         doSomethingOnce(labels)
                     }
@@ -602,14 +715,11 @@ class EvaluationActivity : AppCompatActivity() {
 
                             mp = MediaPlayer.create(this@EvaluationActivity, R.raw.wrong_lesson1)
                             mp.start()
-                            AlertDialog.Builder(this)
-                                .setTitle("خطأ!")
-                                .setMessage(
-                                    "خطأ في اداء التمرين "
-                                ) // Specifying a listener allows you to take an action before dismissing the dialog.
+                            AlertDialog.Builder(this).setTitle("خطأ!").setMessage(
+                                "خطأ في اداء التمرين "
+                            ) // Specifying a listener allows you to take an action before dismissing the dialog.
                                 // The dialog is automatically dismissed when a dialog button is clicked.
-                                .setPositiveButton(
-                                    R.string.yes,
+                                .setPositiveButton(R.string.yes,
                                     DialogInterface.OnClickListener { dialog, which ->
                                         mp.stop()
                                     }) // A null listener allows the button to dismiss the dialog and take no further action.
@@ -619,6 +729,100 @@ class EvaluationActivity : AppCompatActivity() {
                 }
             }
 
+
+            if (sharedPreference.getInt("lesson", 0) == 4) {
+
+
+                if (labels[0].label.equals("dribbling basketball")
+
+                    || labels[1].label.equals("dribbling basketball")
+
+                    || labels[2].label.equals("dribbling basketball")
+
+                ) {
+
+                    binding.btnTakePhoto.setBackgroundColor(Color.parseColor("#1B8D23"))
+                    sharedPreference.edit().putBoolean("correct_sport", true).apply()
+                    binding.btnTakePhoto.setOnClickListener {
+                        doSomethingOnce(labels)
+                    }
+
+                } else {
+
+                    binding.btnTakePhoto.setOnClickListener {
+
+                        if (sharedPreference.getBoolean("correct_sport", true)) {
+                            doSomethingOnce(labels)
+                        } else {
+                            // Toast.makeText(this, labels[0].label.toString().trim(), Toast.LENGTH_SHORT).show()
+
+                            mp = MediaPlayer.create(this@EvaluationActivity, R.raw.dribble_mistake)
+                            mp.start()
+                            AlertDialog.Builder(this).setTitle("خطأ!").setMessage(
+                                "خطأ في اداء التمرين "
+                            ) // Specifying a listener allows you to take an action before dismissing the dialog.
+                                // The dialog is automatically dismissed when a dialog button is clicked.
+                                .setPositiveButton(R.string.yes,
+                                    DialogInterface.OnClickListener { dialog, which ->
+                                        mp.stop()
+                                    }) // A null listener allows the button to dismiss the dialog and take no further action.
+                                .show()
+                        }
+                    }
+                }
+            }
+
+
+
+            if (sharedPreference.getInt("lesson", 0) == 5) {
+
+
+                if ((labels[0].label.equals("somersaulting")
+
+                            || labels[1].label.equals("somersaulting")
+
+                            || labels[2].label.equals("somersaulting"))
+
+                    && (
+                            labels[0].label.equals("contorting")
+
+                                    || labels[1].label.equals("contorting")
+
+                                    || labels[2].label.equals("contorting")
+                            )
+
+                ) {
+
+                    binding.btnTakePhoto.setBackgroundColor(Color.parseColor("#1B8D23"))
+                    sharedPreference.edit().putBoolean("correct_sport", true).apply()
+                    binding.btnTakePhoto.setOnClickListener {
+                        doSomethingOnce(labels)
+                    }
+
+                } else {
+
+                    binding.btnTakePhoto.setOnClickListener {
+
+                        if (sharedPreference.getBoolean("correct_sport", true)) {
+                            doSomethingOnce(labels)
+                        } else {
+                            // Toast.makeText(this, labels[0].label.toString().trim(), Toast.LENGTH_SHORT).show()
+
+                            mp = MediaPlayer.create(this@EvaluationActivity, R.raw.roll_mistake)
+                            mp.start()
+                            AlertDialog.Builder(this).setTitle("خطأ!").setMessage(
+                                "خطأ في اداء التمرين "
+                            ) // Specifying a listener allows you to take an action before dismissing the dialog.
+                                // The dialog is automatically dismissed when a dialog button is clicked.
+                                .setPositiveButton(R.string.yes,
+                                    DialogInterface.OnClickListener { dialog, which ->
+                                        mp.stop()
+                                    }) // A null listener allows the button to dismiss the dialog and take no further action.
+                                .show()
+                        }
+                    }
+                }
+            }
 
 //            binding.btnTakePhoto.setOnClickListener {
 //                stopCamera(labels)
@@ -650,11 +854,18 @@ class EvaluationActivity : AppCompatActivity() {
 
     private fun doSomethingOnce(labels: List<Category>) {
         captureVideo()
-        // Toast.makeText(this, labels[0].label.toString().trim() + labels[1].label.toString().trim()  + labels[2].label.toString().trim()  + labels[3].label.toString().trim(), Toast.LENGTH_SHORT).show()
+
         cache.computeIfAbsent(true) { x: Boolean? ->
             mp = MediaPlayer.create(this@EvaluationActivity, R.raw.sport_done)
             mp.start()
-            if (labels[0].score > 0.5 || labels[1].score > 0.5 || labels[2].score > 0.5) {
+
+            if (labels[0].score > 0.2 && labels[0].score < 0.5 || labels[1].score > 0.2 && labels[1].score < 0.5 || labels[2].score > 0.2 && labels[2].score < 0.5) {
+                binding.bottomSheet.tvDetectedItem0Value.text = "9/10"
+                sharedPreference.edit().putString("score", "9/10").apply()
+            } else if (labels[0].score > 0.5 && labels[0].score > 0.7 || labels[1].score > 0.5 && labels[1].score < 0.7 || labels[2].score > 0.5 && labels[2].score < 0.7) {
+                binding.bottomSheet.tvDetectedItem0Value.text = "8/10"
+                sharedPreference.edit().putString("score", "8/10").apply()
+            } else if (labels[0].score > 0.7 && labels[0].score > 0.9 || labels[1].score > 0.7 && labels[1].score > 0.9 || labels[2].score > 0.7 && labels[2].score > 0.9) {
                 binding.bottomSheet.tvDetectedItem0Value.text = "10/10"
                 sharedPreference.edit().putString("score", "10/10").apply()
             } else {

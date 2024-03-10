@@ -49,35 +49,35 @@ class NewSkills : Fragment(), LessonClickListener {
             listOf(
                 LessonsModel(
                     lessonId = 1,
-                    lessonName = "التمرين الأول",
+                    lessonName = "إحماء",
                     lessonUrl = "https://media.geeksforgeeks.org/wp-content/uploads/20201217192146/Screenrecorder-2020-12-17-19-17-36-828.mp4?_=1",
                     colorString = "#A5DCD6",
                     textColor = "#009688"
                 ),
                 LessonsModel(
                     lessonId = 2,
-                    lessonName = "التمرين الثاني",
+                    lessonName = "التمريرة الصدرية",
                     lessonUrl = "https://media.geeksforgeeks.org/wp-content/uploads/20201217192146/Screenrecorder-2020-12-17-19-17-36-828.mp4?_=1",
                     colorString = "#A5DCD6",
                     textColor = "#009688"
                 ),
                 LessonsModel(
                     lessonId = 3,
-                    lessonName = "التمرين الثالث",
+                    lessonName = "الميزان الأمامي",
                     lessonUrl = "https://media.geeksforgeeks.org/wp-content/uploads/20201217192146/Screenrecorder-2020-12-17-19-17-36-828.mp4?_=1",
                     colorString = "#A5DCD6",
                     textColor = "#009688"
                 ),
                 LessonsModel(
                     lessonId = 4,
-                    lessonName = "التمرين الرابع",
+                    lessonName = "تنطيط الكرة",
                     lessonUrl = "https://www.youtube.com/watch?v=lqH005ntlyY",
                     colorString = "#A5DCD6",
                     textColor = "#009688"
                 ),
                 LessonsModel(
                     lessonId = 5,
-                    lessonName = "التمرين الخامس",
+                    lessonName = "الدحرجة الامامية المكورة",
                     lessonUrl = "https://www.youtube.com/watch?v=lqH005ntlyY",
                     colorString = "#A5DCD6",
                     textColor = "#009688"

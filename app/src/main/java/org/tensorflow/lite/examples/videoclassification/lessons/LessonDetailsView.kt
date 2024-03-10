@@ -47,6 +47,9 @@ class LessonDetailsView : Fragment() {
         val rawId = when (sharedPreference.getInt("lesson", 1)) {
             1 -> resources.getIdentifier("running", "raw", requireContext().packageName)
             2 -> resources.getIdentifier("chest_ball", "raw", requireContext().packageName)
+            3 -> resources.getIdentifier("balance", "raw", requireContext().packageName)
+            4 -> resources.getIdentifier("dribble", "raw", requireContext().packageName)
+            5 -> resources.getIdentifier("roll", "raw", requireContext().packageName)
             else -> resources.getIdentifier("lesson1", "raw", requireContext().packageName)
         }
 
